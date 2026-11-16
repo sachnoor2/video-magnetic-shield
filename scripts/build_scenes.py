@@ -471,6 +471,8 @@ def shot_setup(S, E, v):
              focus=9.0, fg=((1.45, -0.95, 7.3), 1.1)),
         dict(loc0=(-2.9, -2.9, 2.9), loc1=(-2.3, -2.3, 2.3), tgt=(0.35, 0.35, 1.35), lens=90,
              fstop=1.9, focus=3.6, fg=((-1.1, -1.1, 2.0), 0.42)),
+        dict(loc0=(-5.4, 3.6, 6.4), loc1=(-4.3, 2.9, 5.3), tgt=(0, 0, 0), lens=42, fstop=2.0,
+             focus=8.2),
     ]
     c = cams[v % len(cams)]
     cam = place_camera(S, E, c)
@@ -666,6 +668,8 @@ def shot_twist(S, E, v):
              lens=35, fstop=2.4, focus=24.0, fg=((1.1, 1.4, 1.0), 0.7)),
         dict(loc0=(3.2, -2.2, 3.6), loc1=(2.3, -1.5, 2.9), tgt=(0, 14, 9.0), lens=58, fstop=1.8,
              focus=11.0, fg=((1.9, -0.7, 3.3), 0.55)),
+        dict(loc0=(-1.8, 8.4, 2.4), loc1=(-1.2, 11.0, 3.6), tgt=(-2.0, 26, 9.0), lens=62,
+             fstop=1.8, focus=18.0),
     ]
     c = cams[v % len(cams)]
     cam = place_camera(S, E, c)
@@ -707,6 +711,8 @@ def shot_resolution(S, E, v):
              focus=8.0),
         dict(loc0=(1.4, -2.6, 16.5), loc1=(0.9, -2.2, 12.8), tgt=(0, 0, 0), lens=45, fstop=2.1,
              focus=13.0),
+        dict(loc0=(0.0, -4.8, 5.4), loc1=(0.0, -4.8, 4.2), tgt=(0, 0, 0), lens=55, fstop=1.9,
+             focus=5.4),
     ]
     c = cams[v % len(cams)]
     cam = place_camera(S, E, c)

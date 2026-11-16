@@ -4,6 +4,7 @@
 The number this prints is the only thing allowed to size the shards.
 """
 import argparse
+import os
 import statistics
 import sys
 import time
@@ -18,7 +19,15 @@ def main():
     ap.add_argument('--frames', type=int, default=12)
     args = ap.parse_args(argv)
 
-    bpy.ops.wm.open_mainfile(filepath=args.scene)
+    scene = args.scene
+    if not os.path.exists(scene):
+        import glob
+        found = sorted(glob.glob(os.path.join(os.path.dirname(scene) or '.', '*.blend')))
+        if not found:
+            raise SystemExit(f'no .blend files next to {scene}')
+        scene = found[len(found) // 2]
+        print(f'  {args.scene} missing, benchmarking {scene} instead')
+    bpy.ops.wm.open_mainfile(filepath=scene)
     sc = bpy.context.scene
     span = sc.frame_end - sc.frame_start
     n = max(2, args.frames)

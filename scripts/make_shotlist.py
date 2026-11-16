@@ -37,19 +37,25 @@ META = {
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--manifest', default='src/manifest.json')
+    ap.add_argument('--narration', default='narration.json')
     ap.add_argument('--out', default='shotlist.json')
     ap.add_argument('--width', type=int, default=720)
     ap.add_argument('--height', type=int, default=1280)
     args = ap.parse_args()
 
     man = json.load(open(args.manifest, encoding='utf-8'))
+    try:                       # captions live in the script, not in the TTS manifest
+        script = {s['id']: s for s in json.load(open(args.narration, encoding='utf-8'))['scenes']}
+    except Exception:
+        script = {}
     fps = man['fps']
     cuts, cursor = [], 0
 
     for scene in man['scenes']:
         sid = scene['id']
         n = int(scene['frames'])
-        captions = scene.get('captions') or [scene.get('caption', '')]
+        captions = (script.get(sid, {}).get('captions')
+                    or scene.get('captions') or [scene.get('caption', '')])
         meta = META.get(sid, {})
         k = len(captions)
 

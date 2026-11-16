@@ -89,7 +89,7 @@ jobs:
       - name: benchmark (12 frames at final settings)
         run: |
           blender -b -P scripts/benchmark.py -- \
-            --scene scenes/05-escalation.blend --frames 12 | tee bench.txt
+            --scene scenes/05-escalation-1.blend --frames 12 | tee bench.txt
 
       - name: plan shards
         id: plan

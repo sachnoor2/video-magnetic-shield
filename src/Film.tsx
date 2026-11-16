@@ -4,13 +4,25 @@ import shotlist from '../shotlist.json';
 
 type Shot = {
   id: string;
+  beat: string;
   start: number;
   end: number;
   frames: number;
   caption: string;
 };
 
-const SHOTS = shotlist.shots as Shot[];
+const SHOTS = shotlist.shots as unknown as Shot[];
+
+/** One narration track per BEAT, spanning all of that beat's cuts. */
+const BEATS = SHOTS.reduce<{beat: string; start: number; frames: number}[]>((acc, shot) => {
+  const last = acc[acc.length - 1];
+  if (last && last.beat === shot.beat) {
+    last.frames = shot.end - last.start + 1;
+  } else {
+    acc.push({beat: shot.beat, start: shot.start, frames: shot.frames});
+  }
+  return acc;
+}, []);
 
 /** Frame-exact read of the Blender PNG sequence by ABSOLUTE index. */
 const FrameSeq: React.FC<{start: number}> = ({start}) => {
@@ -80,8 +92,14 @@ export const Film: React.FC = () => (
     {SHOTS.map((shot) => (
       <Sequence key={shot.id} from={shot.start} durationInFrames={shot.frames} name={shot.id}>
         <FrameSeq start={shot.start} />
-        <Audio src={staticFile(`audio/${shot.id}.wav`)} />
         <Captions text={shot.caption} dur={shot.frames} />
+      </Sequence>
+    ))}
+
+    {/* narration: one track per beat, running across its cuts */}
+    {BEATS.map((b) => (
+      <Sequence key={`a-${b.beat}`} from={b.start} durationInFrames={b.frames} name={`audio-${b.beat}`}>
+        <Audio src={staticFile(`audio/${b.beat}.wav`)} />
       </Sequence>
     ))}
 

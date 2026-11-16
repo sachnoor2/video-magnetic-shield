@@ -19,7 +19,7 @@ import bmesh
 from mathutils import Vector
 
 W, H, FPS = 720, 1280, 30
-SAMPLES = 48
+SAMPLES = 20
 
 
 # ----------------------------------------------------------------------------- scene plumbing
@@ -33,15 +33,15 @@ def setup_render(S, E):
     sc.cycles.device = 'CPU'
     sc.cycles.samples = SAMPLES
     sc.cycles.use_adaptive_sampling = True
-    sc.cycles.adaptive_threshold = 0.02
+    sc.cycles.adaptive_threshold = 0.04
     sc.cycles.use_denoising = True
     try:
         sc.cycles.denoiser = 'OPENIMAGEDENOISE'
     except Exception:
         pass
-    sc.cycles.max_bounces = 4
-    sc.cycles.transmission_bounces = 4
-    sc.cycles.transparent_max_bounces = 8
+    sc.cycles.max_bounces = 2
+    sc.cycles.transmission_bounces = 2
+    sc.cycles.transparent_max_bounces = 5
     sc.cycles.caustics_reflective = False
     sc.cycles.caustics_refractive = False
     sc.render.resolution_x = W

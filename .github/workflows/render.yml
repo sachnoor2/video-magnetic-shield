@@ -95,7 +95,7 @@ jobs:
         id: plan
         run: |
           python3 scripts/plan.py --shotlist shotlist.json --bench bench.txt \
-            --budget-min 20 --out shards.json
+            --budget-min 60 --out shards.json
           echo "shards=$(python3 -c 'import json;print(json.dumps(json.load(open("shards.json"))))')" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v4
@@ -113,7 +113,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      max-parallel: 8
+      max-parallel: 12
       matrix:
         shard: ${{ fromJSON(needs.plan.outputs.shards) }}
     steps:

@@ -13,7 +13,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--shotlist', default='shotlist.json')
     ap.add_argument('--bench', default='bench.txt')
-    ap.add_argument('--budget-min', type=float, default=20.0)
+    ap.add_argument('--budget-min', type=float, default=60.0)
     ap.add_argument('--out', default='shards.json')
     args = ap.parse_args()
 

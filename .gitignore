@@ -1,0 +1,12 @@
+node_modules/
+.piper/
+out/
+public/out/
+public/audio/
+scenes/*.blend
+scenes/*.blend1
+src/manifest.json
+shotlist.json
+shards.json
+bench.txt
+qa.txt

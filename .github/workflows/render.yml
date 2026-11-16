@@ -1,0 +1,221 @@
+name: render
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+concurrency:
+  group: render-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ffmpeg
+        run: command -v ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y ffmpeg)
+
+      - name: piper engine + Hindi voice
+        run: |
+          set -euo pipefail
+          mkdir -p .piper
+          curl -fsSL -o .piper/piper.tar.gz \
+            https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_linux_x86_64.tar.gz
+          tar -xzf .piper/piper.tar.gz -C .piper
+          ID=hi_IN-pratham-medium
+          curl -fsSL -o .piper/$ID.onnx \
+            "https://huggingface.co/rhasspy/piper-voices/resolve/main/hi/hi_IN/pratham/medium/$ID.onnx"
+          curl -fsSL -o .piper/$ID.onnx.json \
+            "https://huggingface.co/rhasspy/piper-voices/resolve/main/hi/hi_IN/pratham/medium/$ID.onnx.json"
+          ls -la .piper .piper/piper | head -20
+
+      - name: narration -> audio + manifest
+        run: |
+          python3 scripts/hinglish_voice.py \
+            --script narration.json --out public/audio \
+            --piper .piper/piper/piper --voice .piper/hi_IN-pratham-medium.onnx
+
+      - name: foley
+        run: python3 scripts/make_foley.py
+
+      - name: manifest -> shotlist
+        run: python3 scripts/make_shotlist.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prep
+          path: |
+            src/manifest.json
+            shotlist.json
+            public/audio
+          retention-days: 7
+
+  plan:
+    needs: prepare
+    runs-on: ubuntu-latest
+    outputs:
+      shards: ${{ steps.plan.outputs.shards }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: prep
+
+      - name: install blender
+        run: |
+          set -euo pipefail
+          (sudo apt-get update -qq && sudo apt-get install -y blender) || true
+          if ! command -v blender >/dev/null 2>&1; then
+            for v in 4.2.9 4.2.5 4.2.1; do
+              if curl -fsSL -o /tmp/blender.tar.xz \
+                  "https://download.blender.org/release/Blender4.2/blender-$v-linux-x64.tar.xz"; then
+                mkdir -p "$HOME/blender" && tar -xf /tmp/blender.tar.xz -C "$HOME/blender"
+                echo "$HOME/blender/blender-$v-linux-x64" >> "$GITHUB_PATH"
+                break
+              fi
+            done
+          fi
+          blender --version | head -2
+
+      - name: build scenes
+        run: |
+          blender -b -P scripts/build_scenes.py -- --shotlist shotlist.json --out scenes
+          ls -la scenes
+
+      - name: benchmark (12 frames at final settings)
+        run: |
+          blender -b -P scripts/benchmark.py -- \
+            --scene scenes/05-escalation.blend --frames 12 | tee bench.txt
+
+      - name: plan shards
+        id: plan
+        run: |
+          python3 scripts/plan.py --shotlist shotlist.json --bench bench.txt \
+            --budget-min 20 --out shards.json
+          echo "shards=$(python3 -c 'import json;print(json.dumps(json.load(open("shards.json"))))')" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: scenes
+          path: |
+            scenes
+            shotlist.json
+            shards.json
+            bench.txt
+          retention-days: 7
+
+  render:
+    needs: [prepare, plan]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: scenes
+
+      - name: install blender
+        run: |
+          set -euo pipefail
+          (sudo apt-get update -qq && sudo apt-get install -y blender) || true
+          if ! command -v blender >/dev/null 2>&1; then
+            for v in 4.2.9 4.2.5 4.2.1; do
+              if curl -fsSL -o /tmp/blender.tar.xz \
+                  "https://download.blender.org/release/Blender4.2/blender-$v-linux-x64.tar.xz"; then
+                mkdir -p "$HOME/blender" && tar -xf /tmp/blender.tar.xz -C "$HOME/blender"
+                echo "$HOME/blender/blender-$v-linux-x64" >> "$GITHUB_PATH"
+                break
+              fi
+            done
+          fi
+          blender --version | head -2
+
+      - name: render shard ${{ matrix.shard.name }}
+        run: |
+          set -euo pipefail
+          mkdir -p public/out
+          echo "shard ${{ matrix.shard.name }}: ${{ matrix.shard.shot }} frames ${{ matrix.shard.start }}..${{ matrix.shard.end }}"
+          blender -b "${{ matrix.shard.blend }}" \
+            -o "$GITHUB_WORKSPACE/public/out/frame_######" \
+            -F PNG -s ${{ matrix.shard.start }} -e ${{ matrix.shard.end }} -a
+          echo "frames written: $(ls public/out | wc -l)"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frames-${{ matrix.shard.name }}
+          path: public/out
+          if-no-files-found: warn
+          retention-days: 7
+
+  stitch:
+    needs: [prepare, render]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: prep
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: frames-*
+          merge-multiple: true
+          path: public/out
+
+      - name: verify every frame index exists exactly once
+        run: python3 scripts/verify_frames.py --shotlist shotlist.json --dir public/out
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm install --no-audit --no-fund
+
+      - run: npx tsc --noEmit
+
+      - run: npx remotion browser ensure || true
+
+      - name: render
+        run: |
+          mkdir -p out
+          npx remotion render src/index.ts Video out/video.mp4 \
+            --gl=swangle --concurrency=3 --log=info
+
+      - name: QA
+        run: |
+          set +e
+          {
+            echo "== streams =="
+            ffprobe -v error -show_entries stream=codec_type,codec_name,width,height,r_frame_rate \
+              -of default=nw=1 out/video.mp4
+            echo "== duration =="
+            ffprobe -v error -show_entries format=duration -of default=nw=1 out/video.mp4
+            echo "== manifest =="
+            python3 -c "import json;m=json.load(open('src/manifest.json'));print('manifest_frames',m['totalFrames'],'seconds',round(m['totalFrames']/m['fps'],2))"
+            echo "== audio level =="
+            ffmpeg -hide_banner -i out/video.mp4 -af volumedetect -f null - 2>&1 | grep -E "mean_volume|max_volume"
+            echo "== black segments =="
+            ffmpeg -hide_banner -i out/video.mp4 -vf blackdetect=d=0.02:pix_th=0.10 -an -f null - 2>&1 | grep -i blackdetect
+            echo "== silence =="
+            ffmpeg -hide_banner -i out/video.mp4 -af silencedetect=n=-45dB:d=0.15 -f null - 2>&1 | grep -i silence
+          } | tee qa.txt
+          exit 0
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: final
+          path: |
+            out/video.mp4
+            qa.txt
+          retention-days: 14

@@ -1,0 +1,66 @@
+{
+  "fps": 30,
+  "pad": 0.7,
+  "minSeconds": 3.2,
+  "lengthScale": 1.06,
+  "scenes": [
+    {
+      "id": "01-hook",
+      "text": "सूरज से लगातार चार्ज्ड कण निकलते रहते हैं। ये सोलह लाख किलोमीटर प्रति घंटा की रफ़्तार से धरती की तरफ़ आते हैं। और धरती के पास इनके लिए एक शील्ड है।",
+      "captions": [
+        "suraj se charged kan",
+        "16 lakh km/h",
+        "dharti ke paas ek shield"
+      ]
+    },
+    {
+      "id": "02-setup",
+      "text": "अंतरिक्ष में धरती बिल्कुल नंगी दिखती है। कोई दीवार नहीं। कोई छत नहीं। फिर भी ये तूफ़ान हमें छू नहीं पाता।",
+      "captions": [
+        "dharti nangi dikhti hai",
+        "koi deewar nahi"
+      ]
+    },
+    {
+      "id": "03-value",
+      "text": "धरती के अंदर तरल लोहा लगातार घूम रहा है। इसकी हलचल से एक चुंबकीय क्षेत्र बनता है। वैज्ञानिक इसे मैग्नेटोस्फीयर कहते हैं।",
+      "captions": [
+        "andar taral loha",
+        "ghoomta hua core",
+        "magnetic field banti hai"
+      ]
+    },
+    {
+      "id": "04-proof",
+      "text": "कंपास की सुई इसी फ़ील्ड की तरफ़ मुड़ जाती है।",
+      "captions": [
+        "compass ki sui"
+      ]
+    },
+    {
+      "id": "05-escalation",
+      "text": "सोलर स्टॉर्म आते ही ये फ़ील्ड सूरज की तरफ़ से चपटी हो जाती है।",
+      "captions": [
+        "solar storm aata hai",
+        "field chapti ho jaati hai"
+      ]
+    },
+    {
+      "id": "06-twist",
+      "text": "कुछ कण पोल्स पर अंदर घुस जाते हैं। वहाँ हवा से टकराकर हरी रोशनी बनाते हैं। यही ऑरोरा है। और मंगल ने अपनी फ़ील्ड खो दी। आज उसकी हवा लगभग ख़त्म है।",
+      "captions": [
+        "poles par kane ghus jaate hain",
+        "yahi aurora hai",
+        "mangal ne field kho di"
+      ]
+    },
+    {
+      "id": "07-resolution",
+      "text": "तो वो अदृश्य शील्ड सिर्फ़ रोशनी नहीं है। वो हमारी हवा है। हमारा पानी है। हमारी ज़िंदगी है।",
+      "captions": [
+        "wo shield hamari hawa hai",
+        "hamari zindagi hai"
+      ]
+    }
+  ]
+}
